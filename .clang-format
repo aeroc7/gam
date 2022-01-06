@@ -3,10 +3,10 @@ Language:        Cpp
 # BasedOnStyle:  Google
 AccessModifierOffset: -4
 AlignAfterOpenBracket: DontAlign
-AlignConsecutiveMacros: None
+AlignConsecutiveMacros: AcrossEmptyLines
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
-AlignConsecutiveDeclarations: None
+AlignConsecutiveDeclarations: AcrossEmptyLines
 AlignEscapedNewlines: Left
 AlignOperands:   Align
 AlignTrailingComments: true
@@ -21,7 +21,7 @@ AllowShortLambdasOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: None
-AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterReturnType: All
 AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros:
