@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef PATH_HDLR_H_
-#define PATH_HDLR_H_
+#include "gam.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <parsers/scenery_packs.h>
 
-char *
-path_hdlr_join_paths(const char *p1, const char *p2);
-char *
-path_hdlr_convert_to_native(const char *path);
-
-#ifdef __cplusplus
+int
+gam_init() {
+    scenery_packs_parse(USER_XPLANE_ROOT);
+    return 0;
 }
-#endif
-
-#endif /* PATH_HDLR_H_ */

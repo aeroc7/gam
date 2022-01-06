@@ -1,8 +1,13 @@
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Source file storage
 add_library(project_source INTERFACE)
 
+# Include util directory
+target_include_directories(project_source INTERFACE "${CMAKE_CURRENT_LIST_DIR}/")
+
 # Add subdirectories here that append source files to the 'library' above.
 
+add_subdirectory(gam)
 add_subdirectory(parsers)
 add_subdirectory(utils)
 
@@ -28,7 +33,6 @@ if(NOT XPLANE_ROOT)
 else()
     target_compile_definitions(project_options INTERFACE -DUSER_XPLANE_ROOT="${XPLANE_ROOT}")
 endif()
-
 
 if(WIN32)
     target_link_libraries(project_libraries

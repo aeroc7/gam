@@ -14,36 +14,35 @@
  * limitations under the License.
  */
 
-#include "path_hdlr.h"
+#ifndef APT_DAT_H_
+#define APT_DAT_H_
 
 #include <stdlib.h>
-#include <string.h>
 
-char *
-path_hdlr_join_paths(const char *p1, const char *p2) {
-    char  *new_path;
-    size_t len1, len2;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    len1 = strlen(p1);
-    len2 = strlen(p2);
-    new_path = malloc((sizeof(char) * (len1 + len2)) + 1);
-    strncpy(new_path, p1, len1);
-    new_path[len1] = '\0';
-    strncat(new_path, p2, len2);
-    new_path[len1 + len2] = '\0';
+typedef struct airport_info {
+    char  *name;
+    char  *city;
+    char  *country;
+    char  *state;
+    char  *icao;
+    double latitude;
+    double longitude;
+} airport_info_t;
 
-    return new_path;
+typedef struct airport_db {
+    airport_info_t *airports;
+    size_t          airports_size;
+} airport_db_t;
+
+airport_db_t *
+apt_dat_parse(const char **files, size_t size);
+
+#ifdef __cplusplus
 }
+#endif
 
-char *
-path_hdlr_convert_to_native(const char *path) {
-    size_t len;
-    char  *rs;
-
-    len = strlen(path);
-    rs = malloc((sizeof(char) * len) + 1);
-    strncpy(rs, path, len);
-    rs[len] = '\0';
-
-    return rs;
-}
+#endif /* APT_DAT_H_ */

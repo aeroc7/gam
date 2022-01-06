@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+#include <gam/gam.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "utils/log.h"
+#include <utils/log.h>
 
 int
 main() {
+    if (gam_init() != 0) {
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }

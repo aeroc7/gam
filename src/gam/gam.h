@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef PATH_HDLR_H_
-#define PATH_HDLR_H_
+#ifndef GAM_H_
+#define GAM_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-char *
-path_hdlr_join_paths(const char *p1, const char *p2);
-char *
-path_hdlr_convert_to_native(const char *path);
+int
+gam_init();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* PATH_HDLR_H_ */
+#endif /* GAM_H_ */

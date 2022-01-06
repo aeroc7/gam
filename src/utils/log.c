@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void
 log_out(FILE *loc, char *fmt, va_list ap) {

@@ -17,14 +17,30 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void
-log_msg(char *fmt, ...);
+log_msg_(char *fmt, ...);
 void
-log_err(char *fmt, ...);
+log_err_(char *fmt, ...);
+
+#define log_msg(...)     log_msg_(__VA_ARGS__)
+#define log_err(...)     log_err_(__VA_ARGS__)
+
+#define UNUSED(a)        (void)(a)
+#define COND_UNLIKELY(x) __builtin_expect(x, 0)
+
+#define ASSERT(x)                               \
+    do {                                        \
+        if (COND_UNLIKELY(!(x))) {              \
+            log_err("Assertion %s failed", #x); \
+            abort();                            \
+        }                                       \
+    } while (0)
 
 #ifdef __cplusplus
 }
