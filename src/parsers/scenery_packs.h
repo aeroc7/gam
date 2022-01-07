@@ -23,15 +23,14 @@
 extern "C" {
 #endif
 
-typedef struct {
-    char **paths;
-    size_t paths_size;
-} scenery_packs_data_t;
+typedef struct scenery_packs_data scenery_packs_data_t;
 
 scenery_packs_data_t *
 scenery_packs_parse(const char *xp_path);
 scenery_packs_data_t *
 scenery_packs_free(scenery_packs_data_t *data);
+size_t
+scenery_packs_get_data(scenery_packs_data_t *data, char ***ret);
 
 #ifdef __cplusplus
 }
