@@ -47,7 +47,6 @@ scenery_packs_get_file_data(const char *xp_path, const char *native_path) {
     fp = fopen(native_path, "r");
     if (!fp) {
         log_err("Failed to open file %s", native_path);
-        fclose(fp);
         return NULL;
     }
 
