@@ -74,11 +74,9 @@ scenery_packs_get_file_data(const char *xp_path, const char *native_path) {
             char *npath = path_hdlr_join_paths(xp_path, path);
             char *full_path = path_hdlr_join_paths(npath, SCENERY_APT_DAT_EXT);
 
-            scenery_paths->paths[scenery_paths->paths_size] =
-                path_hdlr_convert_to_native(full_path);
+            scenery_paths->paths[scenery_paths->paths_size] = full_path;
             scenery_paths->paths_size += 1;
 
-            free(full_path);
             free(npath);
         }
     }
