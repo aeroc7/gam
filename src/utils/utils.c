@@ -19,6 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
+
+#define MAX_SPLIT_LEN 512
+
 void
 utils_strip_newline(char *str) {
     size_t len;
@@ -42,4 +46,46 @@ utils_strdup(const char *str) {
     str_copy[len] = '\0';
 
     return str_copy;
+}
+
+char *
+utils_str_split_at(const char *data, unsigned index) {
+    size_t   len = strlen(data);
+    char     str_arr[MAX_SPLIT_LEN];
+    char    *str, *token;
+    unsigned ctr = 0;
+
+    ASSERT(len < MAX_SPLIT_LEN);
+
+    strncpy(str_arr, data, sizeof(str_arr) - 1);
+    str_arr[strlen(data)] = '\0';
+
+    str = str_arr;
+
+    while ((token = strtok_r(str, " ", &str))) {
+        if (ctr == index) {
+            return utils_strdup(token);
+        }
+
+        ++ctr;
+    }
+
+    return NULL;
+}
+
+char *
+utils_str_split_after(const char *data, unsigned index) {
+    unsigned ctr = 0;
+
+    for (size_t i = 0; i < strlen(data); ++i) {
+        if (ctr == index) {
+            return utils_strdup(data + i);
+        }
+
+        if (data[i] == ' ') {
+            ctr += 1;
+        }
+    }
+
+    return NULL;
 }

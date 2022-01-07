@@ -27,6 +27,12 @@ utils_strip_newline(char *str);
 char *
 utils_strdup(const char *str);
 
+/* These operate on spaces: " " */
+char *
+utils_str_split_at(const char *data, unsigned index);
+char *
+utils_str_split_after(const char *data, unsigned index);
+
 #ifdef __cplusplus
 }
 #endif
