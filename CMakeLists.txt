@@ -10,6 +10,7 @@ target_compile_features(project_options INTERFACE cxx_std_20)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(CMAKE_C_STANDARD 99)
 
 find_package(Threads REQUIRED)
 
