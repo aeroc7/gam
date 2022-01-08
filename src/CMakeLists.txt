@@ -34,6 +34,9 @@ else()
     target_compile_definitions(project_options INTERFACE -DUSER_XPLANE_ROOT="${XPLANE_ROOT}")
 endif()
 
+# Various library definitions
+target_compile_definitions(project_options INTERFACE -DGLEW_STATIC)
+
 if(WIN32)
     target_link_libraries(project_libraries
         INTERFACE
@@ -56,4 +59,12 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         project_options
         project_warnings
         project_libraries
+        GL
+        cairo
+        freetype
+        pixman
+        -lm
+        glew
+        glfw
+        xpsdk
 )
