@@ -16,6 +16,8 @@
 
 #include "utils.h"
 
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,14 +78,26 @@ utils_str_split_at(const char *data, unsigned index) {
 char *
 utils_str_split_after(const char *data, unsigned index) {
     unsigned ctr = 0;
+    bool     was_char = false;
 
     for (size_t i = 0; i < strlen(data); ++i) {
         if (ctr == index) {
+            if (isspace(data[i])) {
+                continue;
+            }
+
             return utils_strdup(data + i);
         }
 
-        if (data[i] == ' ') {
+        const bool is_space = isspace(data[i]);
+
+        if (is_space && was_char) {
             ctr += 1;
+            was_char = false;
+        } else if (is_space) {
+            continue;
+        } else {
+            was_char = true;
         }
     }
 
