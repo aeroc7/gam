@@ -80,6 +80,11 @@ apt_dat_handle_rowcode(const char *line) {
     return row_code;
 }
 
+static bool
+apt_dat_check_comment(const char *line) {
+    return (strlen(line) > 2) ? (line[0] == '#' && line[1] == '#') : false;
+}
+
 static int
 apt_dat_count_airports(const char *line, void *udata) {
     ASSERT(udata != NULL);
@@ -134,8 +139,40 @@ apt_dat_handle_1302(const char *line, airport_info_t *ap_info) {
     free(mdata);
 }
 
+/* Land runways */
+static void
+apt_dat_handle_100(const char *line, airport_info_t *ap_info) {
+    ap_info->runways_size += 1;
+    ap_info->runways = realloc(ap_info->runways, sizeof(*ap_info->runways) * ap_info->runways_size);
+    const size_t rwy_idx = ap_info->runways_size - 1;
+
+    ap_info->runways[rwy_idx].width = apt_dat_str_to_double(line, 1);
+
+    /* Names */
+    for (unsigned i = 0; i < 2; ++i) {
+        char        *nm = utils_str_split_at(line, 8 + (i * 9));
+        const size_t max_sz = sizeof(ap_info->runways[rwy_idx].name[i]);
+
+        strncpy(ap_info->runways[rwy_idx].name[i], nm, max_sz - 1);
+        ap_info->runways[rwy_idx].name[i][max_sz - 1] = '\0';
+
+        free(nm);
+    }
+
+    /* Lat & lon */
+    for (unsigned i = 0; i < 2; ++i) {
+        ap_info->runways[rwy_idx].latitude[i] = apt_dat_str_to_double(line, 9 + (i * 9));
+        ap_info->runways[rwy_idx].longitude[i] = apt_dat_str_to_double(line, 10 + (i * 9));
+    }
+}
+
 static int
 apt_dat_gather_ap_info(const char *line, void *udata) {
+    /* Skip if line is a comment */
+    if (apt_dat_check_comment(line)) {
+        return 1;
+    }
+
     ASSERT(udata != NULL);
 
     gather_ap_data_t *gapt = (gather_ap_data_t *)udata;
@@ -156,6 +193,11 @@ apt_dat_gather_ap_info(const char *line, void *udata) {
         case 17:
             gapt->has_airport = false;
             break;
+        case 100:
+            if (gapt->has_airport) {
+                apt_dat_handle_100(line, &gapt->ap_db->airports[true_apt_index]);
+            }
+            break;
         case 1302:
             if (gapt->has_airport) {
                 apt_dat_handle_1302(line, &gapt->ap_db->airports[true_apt_index]);
@@ -164,6 +206,31 @@ apt_dat_gather_ap_info(const char *line, void *udata) {
     }
 
     return 1;
+}
+
+airport_db_t *
+apt_dat_airport_db_create(size_t num_airports) {
+    airport_db_t *adb;
+
+    ASSERT(num_airports > 0);
+
+    adb = malloc(sizeof(*adb));
+    adb->airports = malloc(sizeof(airport_info_t) * num_airports);
+    adb->airports_size = 0;
+
+    for (size_t i = 0; i < num_airports; ++i) {
+        adb->airports[i].icao = NULL;
+        adb->airports[i].name = NULL;
+        adb->airports[i].city = NULL;
+        adb->airports[i].country = NULL;
+        adb->airports[i].state = NULL;
+        adb->airports[i].latitude = 0;
+        adb->airports[i].longitude = 0;
+        adb->airports[i].runways = NULL;
+        adb->airports[i].runways_size = 0;
+    }
+
+    return adb;
 }
 
 airport_db_t *
@@ -179,30 +246,22 @@ apt_dat_parse(const char **files, size_t size) {
 
     gather_ap_data_t airport_gather = {.has_airport = false};
 
-    airport_gather.ap_db = malloc(sizeof(airport_db_t));
-    airport_gather.ap_db->airports = malloc(sizeof(airport_info_t) * num_airports);
-    airport_gather.ap_db->airports_size = 0;
-
-    for (size_t i = 0; i < num_airports; ++i) {
-        airport_gather.ap_db->airports[i].icao = NULL;
-        airport_gather.ap_db->airports[i].name = NULL;
-        airport_gather.ap_db->airports[i].city = NULL;
-        airport_gather.ap_db->airports[i].country = NULL;
-        airport_gather.ap_db->airports[i].state = NULL;
-        airport_gather.ap_db->airports[i].latitude = 0;
-        airport_gather.ap_db->airports[i].longitude = 0;
-    }
+    airport_gather.ap_db = apt_dat_airport_db_create(num_airports);
 
     apt_dat_file_read(files, size, (void *)&airport_gather.ap_db, apt_dat_gather_ap_info);
 
     for (size_t i = 0; i < airport_gather.ap_db->airports_size; ++i) {
-        if (strcmp(airport_gather.ap_db->airports[i].icao, "KSEA") == 0) {
+        if (strcmp(airport_gather.ap_db->airports[i].icao, "KLAX") == 0) {
             log_msg("Name: %s", airport_gather.ap_db->airports[i].name);
             log_msg("City: %s", airport_gather.ap_db->airports[i].city);
             log_msg("Country: %s", airport_gather.ap_db->airports[i].country);
             log_msg("State: %s", airport_gather.ap_db->airports[i].state);
             log_msg("Lat & lon %lf %lf", airport_gather.ap_db->airports[i].latitude,
                 airport_gather.ap_db->airports[i].longitude);
+            log_msg("Airport rwy2 name: %s", airport_gather.ap_db->airports[i].runways[1].name[1]);
+            log_msg("Airport rwy2 lat & lon: %lf %lf",
+                airport_gather.ap_db->airports[i].runways[1].latitude[1],
+                airport_gather.ap_db->airports[i].runways[1].longitude[1]);
         }
     }
 
@@ -220,6 +279,7 @@ apt_dat_db_free(airport_db_t *db) {
         free(db->airports[i].country);
         free(db->airports[i].state);
         free(db->airports[i].icao);
+        free(db->airports[i].runways);
     }
 
     free(db->airports);

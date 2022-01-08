@@ -23,14 +23,24 @@
 extern "C" {
 #endif
 
+typedef struct runway_info {
+    double width;
+    char   name[2][4];
+    double latitude[2];
+    double longitude[2];
+} runway_info_t;
+
 typedef struct airport_info {
-    char  *name;
-    char  *city;
-    char  *country;
-    char  *state;
-    char  *icao;
-    double latitude;
-    double longitude;
+    char          *name;
+    char          *city;
+    char          *country;
+    char          *state;
+    char          *icao;
+    double         latitude;
+    double         longitude;
+
+    runway_info_t *runways;
+    size_t         runways_size;
 } airport_info_t;
 
 typedef struct airport_db {
