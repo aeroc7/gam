@@ -57,6 +57,8 @@ function(set_project_warnings project_name)
       -Wduplicated-cond # warn if if / else chain has duplicated conditions
       -Wduplicated-branches # warn if if / else branches have duplicated code
       -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
+      -Wno-stringop-truncation
+      -Wno-stringop-overflow
   )
 
   if(MSVC)
