@@ -40,6 +40,8 @@ typedef struct airport_db {
 
 airport_db_t *
 apt_dat_parse(const char **files, size_t size);
+void *
+apt_dat_db_free(airport_db_t *db);
 
 #ifdef __cplusplus
 }
