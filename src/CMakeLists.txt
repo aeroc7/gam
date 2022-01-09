@@ -8,6 +8,7 @@ target_include_directories(project_source INTERFACE "${CMAKE_CURRENT_LIST_DIR}/"
 # Add subdirectories here that append source files to the 'library' above.
 
 add_subdirectory(gam)
+add_subdirectory(graphics)
 add_subdirectory(parsers)
 add_subdirectory(utils)
 
@@ -63,8 +64,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         cairo
         freetype
         pixman
-        -lm
         glew
         glfw
         xpsdk
+        -lm
 )
