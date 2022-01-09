@@ -1,5 +1,3 @@
 target_sources(project_source INTERFACE
-    gam.c
+    frontend.c
 )
-
-add_subdirectory(frontend)

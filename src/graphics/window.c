@@ -99,9 +99,19 @@ window_loop(window_inst_t *window) {
     ASSERT(window != NULL);
 
     while (!glfwWindowShouldClose(window->glfw_window)) {
+        int win_width, win_height;
+        glfwGetFramebufferSize(window->glfw_window, &win_width, &win_height);
+
+        glViewport(0, 0, win_width, win_height);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, win_width, win_height, 0, -1, 1);
+        glMatrixMode(GL_MODELVIEW);
+
         if (window->set_window_loop_cb) {
             window->window_loop_cb(window);
         }
+
         glfwSwapBuffers(window->glfw_window);
         glfwPollEvents();
     }

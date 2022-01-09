@@ -12,13 +12,17 @@
 #include <parsers/scenery_packs.h>
 #include <utils/log.h>
 
+#include "frontend/frontend.h"
+
 int
 gam_init() {
-    scenery_packs_data_t *scen_data;
+    /*scenery_packs_data_t *scen_data;
     char                **file_data = NULL;
-    size_t                file_data_size;
+    size_t                file_data_size;*/
 
-    scen_data = scenery_packs_parse(USER_XPLANE_ROOT);
+    frontend_init();
+
+    /*scen_data = scenery_packs_parse(USER_XPLANE_ROOT);
 
     file_data_size = scenery_packs_get_data(scen_data, NULL);
     scenery_packs_get_data(scen_data, &file_data);
@@ -27,7 +31,9 @@ gam_init() {
 
     db = apt_dat_db_free(db);
 
-    scenery_packs_free(scen_data);
+    scenery_packs_free(scen_data);*/
+
+    frontend_destroy();
 
     return 0;
 }
