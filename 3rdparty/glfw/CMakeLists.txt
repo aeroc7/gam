@@ -1,12 +1,11 @@
 # glfw version 3.3.4
-set(DEP_GLFW_VERSION "3.3.4")
-set(DEP_GLFW_LOC "https://github.com/glfw/glfw/archive/refs/tags/3.3.4.zip")
+set(DEP_GLFW_VERSION "3.3.6")
+set(DEP_GLFW_LOC "https://github.com/glfw/glfw/archive/refs/tags/3.3.6.zip")
 
 include(ExternalProject)
 
 ExternalProject_Add(glfw-build
     URL                 ${DEP_GLFW_LOC}
-    URL_HASH            SHA256=19a1048439a35e49f9b48fbe2e42787cfabae70df80ffd096b3b553bbd8a09f7
     CMAKE_ARGS          -G "Unix Makefiles"
                         -DCMAKE_BUILD_TYPE=Release
                         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
