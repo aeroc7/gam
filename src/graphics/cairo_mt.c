@@ -81,6 +81,10 @@ cairo_mt_thread(void *arg) {
     cmt->start(cmt->cr);
 
     while (1) {
+        /* Clear surface */
+        cairo_set_source_rgb(cmt->cr, 0, 0, 0);
+        cairo_paint(cmt->cr);
+
         if (cmt->loop(cmt->cr) == 1) {
             break;
         }
