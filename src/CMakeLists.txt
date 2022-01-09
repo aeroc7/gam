@@ -36,7 +36,7 @@ else()
 endif()
 
 # Various library definitions
-target_compile_definitions(project_options INTERFACE -DGLEW_STATIC)
+target_compile_definitions(project_options INTERFACE -DGLEW_STATIC -DM_PI=3.1415926535897932)
 
 if(WIN32)
     target_link_libraries(project_libraries
