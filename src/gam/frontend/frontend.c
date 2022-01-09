@@ -83,5 +83,4 @@ frontend_destroy() {
     window_destroy(winst);
     window_graphics_global_destroy();
     cmt = cairo_mt_destroy(cmt);
-    log_msg("B");
 }
