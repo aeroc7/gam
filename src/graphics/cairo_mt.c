@@ -13,7 +13,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <utils/log.h>
+#include <utils/utils.h>
 
 #include "gl_pbo.h"
 
@@ -81,6 +83,8 @@ cairo_mt_thread(void *arg) {
     cmt->start(cmt->cr);
 
     while (1) {
+        long time_start = utils_gettime();
+
         /* Clear surface */
         cairo_set_source_rgb(cmt->cr, 0, 0, 0);
         cairo_paint(cmt->cr);
@@ -98,6 +102,11 @@ cairo_mt_thread(void *arg) {
             memcpy(pbo_buffer, surf_data, (size_t)(stride * cmt->height));
             gl_pbo_finish_back_buffer(cmt->pbo);
         }
+
+        long time_end = utils_gettime();
+        long time_micros = (time_end - time_start) / 1000;
+        ASSERT(time_micros < 33000l);
+        usleep((unsigned)(33000l - time_micros));
     }
 
     cmt->end(cmt->cr);

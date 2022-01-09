@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "log.h"
 
@@ -94,4 +95,13 @@ utils_str_split_after(const char *data, unsigned index) {
     }
 
     return NULL;
+}
+
+long
+utils_gettime() {
+    struct timespec tp;
+
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+
+    return tp.tv_nsec;
 }

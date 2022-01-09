@@ -25,6 +25,9 @@ utils_str_split_at(const char *data, unsigned index);
 char *
 utils_str_split_after(const char *data, unsigned index);
 
+long
+utils_gettime();
+
 #ifdef __cplusplus
 }
 #endif
