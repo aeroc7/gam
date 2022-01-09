@@ -29,13 +29,14 @@ struct cairo_mt {
     pbo_hdlr_t      *pbo;
 
     void (*start)(cairo_t *cr);
-    int (*loop)(cairo_t *cr);
+    void (*loop)(cairo_t *cr);
     void (*end)(cairo_t *cr);
     bool            callbacks_set;
 
     pthread_t       thread;
     pthread_mutex_t mutex;
     bool            thread_started;
+    bool            quit_thread;
 };
 
 static GLuint
@@ -71,6 +72,7 @@ cairo_mt_create(int width, int height) {
 
     cmt->callbacks_set = false;
     cmt->thread_started = false;
+    cmt->quit_thread = false;
 
     return cmt;
 }
@@ -79,19 +81,22 @@ static void *
 cairo_mt_thread(void *arg) {
     ASSERT(arg != NULL);
     cairo_mt_t *cmt = (cairo_mt_t *)arg;
+    bool        should_render = true;
 
     cmt->start(cmt->cr);
 
-    while (1) {
+    while (should_render) {
         long time_start = utils_gettime();
+
+        pthread_mutex_lock(&cmt->mutex);
+        should_render = !cmt->quit_thread;
+        pthread_mutex_unlock(&cmt->mutex);
 
         /* Clear surface */
         cairo_set_source_rgb(cmt->cr, 0, 0, 0);
         cairo_paint(cmt->cr);
 
-        if (cmt->loop(cmt->cr) == 1) {
-            break;
-        }
+        cmt->loop(cmt->cr);
 
         cairo_surface_flush(cmt->surface);
         const int stride = cairo_image_surface_get_stride(cmt->surface);
@@ -105,7 +110,9 @@ cairo_mt_thread(void *arg) {
 
         long time_end = utils_gettime();
         long time_micros = (time_end - time_start) / 1000;
-        ASSERT(time_micros < 33000l);
+        if (time_micros >= 33000l) {
+            time_micros = 0;
+        }
         usleep((unsigned)(33000l - time_micros));
     }
 
@@ -124,7 +131,7 @@ cairo_mt_start(cairo_mt_t *cmt) {
 }
 
 void
-cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr), int (*loop)(cairo_t *cr),
+cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr), void (*loop)(cairo_t *cr),
     void (*end)(cairo_t *cr)) {
     ASSERT(cmt != NULL);
 
@@ -165,6 +172,11 @@ cairo_mt_draw(cairo_mt_t *cmt) {
 void *
 cairo_mt_destroy(cairo_mt_t *cmt) {
     ASSERT(cmt != NULL);
+
+    pthread_mutex_lock(&cmt->mutex);
+    cmt->quit_thread = true;
+    pthread_mutex_unlock(&cmt->mutex);
+
     if (cmt->thread_started) {
         pthread_join(cmt->thread, NULL);
     }

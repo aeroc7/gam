@@ -14,9 +14,8 @@
 #include <graphics/window.h>
 #include <utils/log.h>
 
-static window_inst_t   *winst;
-static cairo_mt_t      *cmt;
-static volatile int32_t quit = 0;
+static window_inst_t *winst;
+static cairo_mt_t    *cmt;
 
 static void
 window_loop_cb(window_inst_t *window) {
@@ -29,7 +28,7 @@ mt_start(cairo_t *cr) {
     UNUSED(cr);
 }
 
-static int
+static void
 mt_loop(cairo_t *cr) {
     cairo_pattern_t *pat;
 
@@ -48,8 +47,6 @@ mt_loop(cairo_t *cr) {
     cairo_arc(cr, 128.0, 128.0, 76.8, 0, 2 * 3.14159268);
     cairo_fill(cr);
     cairo_pattern_destroy(pat);
-
-    return quit;
 }
 
 static void
@@ -79,7 +76,6 @@ frontend_init() {
 
 void
 frontend_destroy() {
-    quit = 1;
     window_destroy(winst);
     window_graphics_global_destroy();
     cmt = cairo_mt_destroy(cmt);

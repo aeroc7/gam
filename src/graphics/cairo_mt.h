@@ -20,7 +20,7 @@ typedef struct cairo_mt cairo_mt_t;
 cairo_mt_t *
 cairo_mt_create(int width, int height);
 void
-cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr), int (*loop)(cairo_t *cr),
+cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr), void (*loop)(cairo_t *cr),
     void (*end)(cairo_t *cr));
 void
 cairo_mt_start(cairo_mt_t *cmt);
