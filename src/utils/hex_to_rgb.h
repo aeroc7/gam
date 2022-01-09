@@ -9,11 +9,15 @@
 #ifndef HEX_TO_RGB_H_
 #define HEX_TO_RGB_H_
 
-#include <log.h>
+#include "log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define HEX_TO_RGB_INPLACE(hex_col)                                        \
+    (((hex_col >> 16) & 0xFF) / 255.0), (((hex_col >> 8) & 0xFF) / 255.0), \
+        ((hex_col & 0xFF) / 255.0)
 
 static inline void
 hex_to_rgb(unsigned hex_col, double *r, double *g, double *b) {
