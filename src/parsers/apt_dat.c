@@ -260,6 +260,22 @@ apt_dat_parse(const char **files, size_t size) {
     return airport_gather.ap_db;
 }
 
+/* Will exit if it doesn't find it */
+size_t
+apt_dat_find_by_icao(const airport_db_t *db, const char *icao) {
+    ASSERT(db != NULL);
+    ASSERT(icao != NULL);
+
+    for (size_t i = 0; i < db->airports_size; ++i) {
+        if (strcmp(icao, db->airports[i].icao) == 0) {
+            return i;
+        }
+    }
+
+    log_err("Couldn't find airport");
+    exit(EXIT_FAILURE);
+}
+
 void *
 apt_dat_db_free(airport_db_t *db) {
     ASSERT(db != NULL);
