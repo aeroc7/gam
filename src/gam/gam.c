@@ -16,24 +16,20 @@
 
 int
 gam_init() {
-    /*scenery_packs_data_t *scen_data;
+    scenery_packs_data_t *scen_data;
     char                **file_data = NULL;
-    size_t                file_data_size;*/
+    size_t                file_data_size;
 
-    frontend_init();
-
-    /*scen_data = scenery_packs_parse(USER_XPLANE_ROOT);
-
+    scen_data = scenery_packs_parse(USER_XPLANE_ROOT);
     file_data_size = scenery_packs_get_data(scen_data, NULL);
     scenery_packs_get_data(scen_data, &file_data);
-
     airport_db_t *db = apt_dat_parse((const char **)file_data, file_data_size);
 
-    db = apt_dat_db_free(db);
-
-    scenery_packs_free(scen_data);*/
-
+    frontend_init(db);
     frontend_destroy();
+
+    db = apt_dat_db_free(db);
+    scenery_packs_free(scen_data);
 
     return 0;
 }

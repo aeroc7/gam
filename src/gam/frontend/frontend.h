@@ -9,12 +9,14 @@
 #ifndef FRONTEND_H_
 #define FRONTEND_H_
 
+#include <parsers/apt_dat.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void
-frontend_init();
+frontend_init(airport_db_t *db);
 void
 frontend_destroy();
 

@@ -12,12 +12,16 @@
 #include <gam/gam_defs.h>
 #include <graphics/cairo_mt.h>
 #include <graphics/window.h>
+#include <math.h>
+#include <string.h>
 #include <utils/log.h>
 
+#include "ap_map.h"
 #include "background.h"
 
-static window_inst_t *winst;
-static cairo_mt_t    *cmt;
+static window_inst_t *winst = NULL;
+static cairo_mt_t    *cmt = NULL;
+static ap_map_t      *ap_map = NULL;
 
 static void
 window_loop_cb(window_inst_t *window) {
@@ -26,22 +30,33 @@ window_loop_cb(window_inst_t *window) {
 }
 
 static void
-mt_start(cairo_t *cr) {
+mt_start(cairo_t *cr, void *udata) {
     UNUSED(cr);
+    ASSERT(udata != NULL);
+    ap_map = ap_map_create(udata);
 }
 
 static void
-mt_loop(cairo_t *cr) {
+mt_loop(cairo_t *cr, void *udata) {
+    ASSERT(udata != NULL);
     background_draw(cr);
+
+    airport_db_t *db = udata;
+    ASSERT(db->airports_size > 0);
+
+    size_t ap_index = apt_dat_find_by_icao(db, "KSEA");
+    ap_map_draw(cr, ap_map, ap_index);
 }
 
 static void
-mt_end(cairo_t *cr) {
+mt_end(cairo_t *cr, void *udata) {
     UNUSED(cr);
+    UNUSED(udata);
+    ap_map = ap_map_destroy(ap_map);
 }
 
 void
-frontend_init() {
+frontend_init(airport_db_t *db) {
     window_graphics_global_init();
 
     winst = window_create(GAM_WINDOW_TITLE, GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT);
@@ -54,7 +69,7 @@ frontend_init() {
     /* Init MT cairo rendering */
     cmt = cairo_mt_create(GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT);
     cairo_mt_set_callbacks(cmt, mt_start, mt_loop, mt_end);
-    cairo_mt_start(cmt);
+    cairo_mt_start(cmt, db);
 
     window_set_window_loop_callback(winst, window_loop_cb);
     window_loop(winst);
