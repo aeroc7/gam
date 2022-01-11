@@ -28,15 +28,17 @@ struct cairo_mt {
     cairo_t         *cr;
     pbo_hdlr_t      *pbo;
 
-    void (*start)(cairo_t *cr);
-    void (*loop)(cairo_t *cr);
-    void (*end)(cairo_t *cr);
+    void (*start)(cairo_t *cr, void *);
+    void (*loop)(cairo_t *cr, void *);
+    void (*end)(cairo_t *cr, void *);
     bool            callbacks_set;
 
     pthread_t       thread;
     pthread_mutex_t mutex;
     bool            thread_started;
     bool            quit_thread;
+
+    void           *userdata;
 };
 
 static GLuint
@@ -83,7 +85,7 @@ cairo_mt_thread(void *arg) {
     cairo_mt_t *cmt = (cairo_mt_t *)arg;
     bool        should_render = true;
 
-    cmt->start(cmt->cr);
+    cmt->start(cmt->cr, cmt->userdata);
 
     while (should_render) {
         long time_start = utils_gettime();
@@ -96,7 +98,7 @@ cairo_mt_thread(void *arg) {
         cairo_set_source_rgb(cmt->cr, 0, 0, 0);
         cairo_paint(cmt->cr);
 
-        cmt->loop(cmt->cr);
+        cmt->loop(cmt->cr, cmt->userdata);
 
         cairo_surface_flush(cmt->surface);
         const int stride = cairo_image_surface_get_stride(cmt->surface);
@@ -116,23 +118,24 @@ cairo_mt_thread(void *arg) {
         usleep((unsigned)(33000l - time_micros));
     }
 
-    cmt->end(cmt->cr);
+    cmt->end(cmt->cr, cmt->userdata);
 
     pthread_exit(NULL);
 }
 
 void
-cairo_mt_start(cairo_mt_t *cmt) {
+cairo_mt_start(cairo_mt_t *cmt, void *userdata) {
     ASSERT(cmt != NULL);
     ASSERT(cmt->callbacks_set);
     cmt->thread_started = true;
+    cmt->userdata = userdata;
 
     pthread_create(&cmt->thread, NULL, cairo_mt_thread, (void *)cmt);
 }
 
 void
-cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr), void (*loop)(cairo_t *cr),
-    void (*end)(cairo_t *cr)) {
+cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr, void *),
+    void (*loop)(cairo_t *cr, void *), void (*end)(cairo_t *cr, void *)) {
     ASSERT(cmt != NULL);
 
     cmt->start = start;
