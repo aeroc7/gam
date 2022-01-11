@@ -20,6 +20,7 @@
 typedef struct gather_ap_data {
     airport_db_t *ap_db;
     bool          has_airport;
+    bool          airport_bb_open;
 } gather_ap_data_t;
 
 static void
@@ -158,14 +159,30 @@ apt_dat_handle_100(const char *line, airport_info_t *ap_info) {
     }
 }
 
+static void
+apt_dat_handle_130(const char *line, airport_info_t *ap_info) {
+    ap_info->boundaries.size += 1;
+
+    if (ap_info->boundaries.size == (ap_info->boundaries.allocd + 1)) {
+        /* Reallocate */
+        ap_info->boundaries.latitude =
+            realloc(ap_info->boundaries.latitude, sizeof(double) * ap_info->boundaries.size * 2);
+        ap_info->boundaries.longitude =
+            realloc(ap_info->boundaries.longitude, sizeof(double) * ap_info->boundaries.size * 2);
+        ap_info->boundaries.allocd = ap_info->boundaries.size * 2;
+    }
+
+    ap_info->boundaries.latitude[ap_info->boundaries.size - 1] = apt_dat_str_to_double(line, 1);
+    ap_info->boundaries.longitude[ap_info->boundaries.size - 1] = apt_dat_str_to_double(line, 2);
+}
+
 static int
 apt_dat_gather_ap_info(const char *line, void *udata) {
+    ASSERT(udata != NULL);
     /* Skip if line is a comment */
     if (apt_dat_check_comment(line)) {
         return 1;
     }
-
-    ASSERT(udata != NULL);
 
     gather_ap_data_t *gapt = (gather_ap_data_t *)udata;
     const long        row_code = apt_dat_handle_rowcode(line);
@@ -173,27 +190,44 @@ apt_dat_gather_ap_info(const char *line, void *udata) {
     if (row_code == 1) {
         gapt->ap_db->airports_size += 1;
     }
-
     const size_t true_apt_index = gapt->ap_db->airports_size - 1;
 
+    /* Don't bother continuing if we don't have a valid airport. */
+    if (row_code != 1 && gapt->has_airport == false) {
+        return 1;
+    }
+
     switch (row_code) {
-        case 1:
+        case 1: /* Land airport*/
             apt_dat_handle_1(line, &gapt->ap_db->airports[true_apt_index]);
             gapt->has_airport = true;
             break;
-        case 16:
-        case 17:
+        case 16: /* Seaplane base */
+        case 17: /* Heliport */
             gapt->has_airport = false;
             break;
-        case 100:
-            if (gapt->has_airport) {
-                apt_dat_handle_100(line, &gapt->ap_db->airports[true_apt_index]);
+        case 100: /* Runway */
+            apt_dat_handle_100(line, &gapt->ap_db->airports[true_apt_index]);
+            break;
+        case 111:
+        case 112:
+            if (gapt->airport_bb_open) {
+                apt_dat_handle_130(line, &gapt->ap_db->airports[true_apt_index]);
             }
             break;
-        case 1302:
-            if (gapt->has_airport) {
-                apt_dat_handle_1302(line, &gapt->ap_db->airports[true_apt_index]);
+        case 113: /* Node with implicit close of loop */
+        case 114: /* Node with Bezier control point, with implicit close of loop */
+            /* Close airport boundary reading if open */
+            if (gapt->airport_bb_open) {
+                apt_dat_handle_130(line, &gapt->ap_db->airports[true_apt_index]);
+                gapt->airport_bb_open = false;
             }
+            break;
+        case 130: /* Airport boundary header */
+            gapt->airport_bb_open = true;
+            break;
+        case 1302: /* Airport metadata */
+            apt_dat_handle_1302(line, &gapt->ap_db->airports[true_apt_index]);
             break;
     }
 
@@ -220,6 +254,10 @@ apt_dat_airport_db_create(size_t num_airports) {
         adb->airports[i].longitude = 0;
         adb->airports[i].runways = NULL;
         adb->airports[i].runways_size = 0;
+        adb->airports[i].boundaries.latitude = NULL;
+        adb->airports[i].boundaries.longitude = NULL;
+        adb->airports[i].boundaries.size = 0;
+        adb->airports[i].boundaries.allocd = 0;
     }
 
     return adb;
@@ -236,7 +274,7 @@ apt_dat_parse(const char **files, size_t size) {
         return NULL;
     }
 
-    gather_ap_data_t airport_gather = {.has_airport = false};
+    gather_ap_data_t airport_gather = {.has_airport = false, .airport_bb_open = false};
 
     airport_gather.ap_db = apt_dat_airport_db_create(num_airports);
 
@@ -288,6 +326,8 @@ apt_dat_db_free(airport_db_t *db) {
         free(db->airports[i].state);
         free(db->airports[i].icao);
         free(db->airports[i].runways);
+        free(db->airports[i].boundaries.latitude);
+        free(db->airports[i].boundaries.longitude);
     }
 
     free(db->airports);

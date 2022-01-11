@@ -22,17 +22,26 @@ typedef struct runway_info {
     double longitude[2];
 } runway_info_t;
 
-typedef struct airport_info {
-    char          *name;
-    char          *city;
-    char          *country;
-    char          *state;
-    char          *icao;
-    double         latitude;
-    double         longitude;
+typedef struct airport_bounds {
+    double *latitude;
+    double *longitude;
+    size_t  size;
+    size_t  allocd;
+} airport_bounds_t;
 
-    runway_info_t *runways;
-    size_t         runways_size;
+typedef struct airport_info {
+    char            *name;
+    char            *city;
+    char            *country;
+    char            *state;
+    char            *icao;
+    double           latitude;
+    double           longitude;
+
+    runway_info_t   *runways;
+    size_t           runways_size;
+
+    airport_bounds_t boundaries;
 } airport_info_t;
 
 typedef struct airport_db {
