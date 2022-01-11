@@ -34,6 +34,9 @@ log_err_(char *fmt, ...);
         }                                       \
     } while (0)
 
+#define VRET0(x) ASSERT(x() == 0)
+#define VRET1(x) ASSERT(x() == 1)
+
 #ifdef __cplusplus
 }
 #endif
