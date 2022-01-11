@@ -49,8 +49,8 @@ global_to_local_xy(const ap_map_t *ap, vec2d_t rwy) {
     double difx = rwy.x - ap->min_x;
     double dify = rwy.y - ap->min_y;
 
-    rwy.x = difx * ((GAM_WINDOW_WIDTH / 2.0) / (ap->max_x - ap->min_x));
-    rwy.y = dify * ((GAM_WINDOW_HEIGHT / 2.0) / (ap->max_y - ap->min_y));
+    rwy.x = difx * ((GAM_WINDOW_WIDTH) / (ap->max_x - ap->min_x));
+    rwy.y = dify * ((GAM_WINDOW_HEIGHT) / (ap->max_y - ap->min_y));
 
     return rwy;
 }
@@ -75,6 +75,35 @@ rwy_coords_convert_combine(const ap_map_t *ap, vec2d_t rwy1, vec2d_t rwy2) {
     ret.b = rwy2;
 
     return ret;
+}
+
+static double
+haversine_formula(double lat1, double lon1, double lat2, double lon2) {
+    double dlat = DEG_TO_RAD(lat2 - lat1);
+    double dlon = DEG_TO_RAD(lon2 - lon1);
+
+    lat1 = DEG_TO_RAD(lat1);
+    lat2 = DEG_TO_RAD(lat2);
+
+    double a = pow(sin(dlat / 2.0), 2) + pow(sin(dlon / 2.0), 2) * cos(lat1) * cos(lat2);
+    double c = 2.0 * asin(sqrt(a));
+    return EARTH_RADIUS * c;
+}
+
+static double
+pixels_per_meter(const ap_map_t *ap, lat2d_t p1, lat2d_t p2, double lat_ref) {
+    double  real_distance_meters = haversine_formula(p1.lat, p1.lon, p2.lat, p2.lon) * 1000.0;
+    vec2d_t global_coords1 = equirectangular_proj(p1.lat, p1.lon, lat_ref);
+    vec2d_t global_coords2 = equirectangular_proj(p2.lat, p2.lon, lat_ref);
+
+    vec4d_t rwy_local_p = rwy_coords_convert_combine(ap, global_coords1, global_coords2);
+
+    /* Distance formula */
+    double rwy_loc_delta_x2 = pow(rwy_local_p.b.x - rwy_local_p.a.x, 2);
+    double rwy_loc_delta_y2 = pow(rwy_local_p.b.y - rwy_local_p.a.y, 2);
+    double xy_distance = sqrt(rwy_loc_delta_x2 + rwy_loc_delta_y2);
+
+    return (xy_distance / real_distance_meters);
 }
 
 ap_map_t *
@@ -121,11 +150,16 @@ ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
             }
         }
 
+        lat2d_t p1 = {.lat = rwy->latitude[0], .lon = rwy->longitude[0]};
+        lat2d_t p2 = {.lat = rwy->latitude[1], .lon = rwy->longitude[1]};
+        double  pixels_p_meter = pixels_per_meter(ap, p1, p2, ap->db->airports[ap_index].latitude);
+
         /* Translate to x, y screen coordinates */
         vec4d_t subd = rwy_coords_convert_combine(ap, rw[0], rw[1]);
 
         /* Draw airport lines */
         cairo_set_source_rgb(cr, 0, 0.25, 0.75);
+        cairo_set_line_width(cr, pixels_p_meter * rwy->width);
         cairo_move_to(cr, subd.a.x, subd.a.y);
         cairo_line_to(cr, subd.b.x, subd.b.y);
         cairo_stroke(cr);

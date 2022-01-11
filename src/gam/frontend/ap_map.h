@@ -28,6 +28,11 @@ typedef struct vec4d {
     vec2d_t b;
 } vec4d_t;
 
+typedef struct lat2d {
+    double lat;
+    double lon;
+} lat2d_t;
+
 ap_map_t *
 ap_map_create(airport_db_t *db);
 void *
