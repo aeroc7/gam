@@ -13,14 +13,18 @@
 extern "C" {
 #endif
 
-#define GAM_WINDOW_TITLE       "GAM"
-#define GAM_WINDOW_WIDTH       738
-#define GAM_WINDOW_HEIGHT      520
+#define GAM_WINDOW_TITLE                "GAM"
+#define GAM_WINDOW_WIDTH                738
+#define GAM_WINDOW_HEIGHT               520
 
-#define GAM_UI_BG_COLOR        0x242424
-#define GAM_UI_PANEL_COLOR     0x2f2f2f
-#define GAM_UI_MAIN_TEXT_COLOR 0xffffff
-#define GAM_UI_GLOBAL_BORDER   15 /* Pixels */
+#define GAM_UI_BG_COLOR                 0x242424
+#define GAM_UI_PANEL_COLOR              0x2f2f2f
+#define GAM_UI_MAIN_TEXT_COLOR          0xffffff
+#define GAM_UI_GLOBAL_BORDER            15 /* Pixels */
+
+#define GAM_UI_APT_RUNWAY_COLOR         0x0973D6
+
+#define GAM_UI_APT_RUNWAY_WIDTH_DEFAULT 2.0 /* Pixels */
 
 #ifdef __cplusplus
 }

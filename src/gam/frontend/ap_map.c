@@ -12,6 +12,7 @@
 #include <gam/gam_defs.h>
 #include <math.h>
 #include <utils/constants.h>
+#include <utils/hex_to_rgb.h>
 #include <utils/log.h>
 
 typedef struct bounding_box {
@@ -164,25 +165,37 @@ ap_map_meters_to_pixels(const ap_map_t *ap, size_t ap_index, double meters) {
     return ap_map_pixels_per_meter(ap, ap_index) * meters;
 }
 
-void
-ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
-    ap_map_set_draw_dims(ap, ap_index);
-
+static void
+ap_map_draw_runways(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
     for (size_t i = 0; i < ap->db->airports[ap_index].runways_size; ++i) {
         const runway_info_t *rwy = &ap->db->airports[ap_index].runways[i];
         vec2d_t              rwy_coords[2];
+        double               rwy_width_px;
 
         for (int j = 0; j < 2; ++j) {
             lat2d_t p = {.lat = rwy->latitude[j], .lon = rwy->longitude[j]};
             rwy_coords[j] = ap_map_latlon_project(ap, p);
         }
 
-        cairo_set_source_rgb(cr, 0, 0.25, 0.75);
-        cairo_set_line_width(cr, ap_map_meters_to_pixels(ap, ap_index, rwy->width));
+        if (rwy->width > 0.0) {
+            rwy_width_px = ap_map_meters_to_pixels(ap, ap_index, rwy->width);
+        } else {
+            rwy_width_px = GAM_UI_APT_RUNWAY_WIDTH_DEFAULT;
+        }
+
+        cairo_set_source_rgb(cr, HEX_TO_RGB_INPLACE(GAM_UI_APT_RUNWAY_COLOR));
+        cairo_set_line_width(cr, rwy_width_px);
         cairo_move_to(cr, rwy_coords[0].x, rwy_coords[0].y);
         cairo_line_to(cr, rwy_coords[1].x, rwy_coords[1].y);
         cairo_stroke(cr);
     }
+}
+
+void
+ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
+    ap_map_set_draw_dims(ap, ap_index);
+
+    ap_map_draw_runways(cr, ap, ap_index);
 }
 
 ap_map_t *
