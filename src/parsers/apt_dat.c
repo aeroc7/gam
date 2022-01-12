@@ -38,7 +38,7 @@ apt_dat_file_read(const char **files, size_t files_size, void *user_data,
         if (fp == NULL) {
             log_err("Failed to open %s", new_file_path);
             free(new_file_path);
-            return;
+            continue;
         }
 
         while (getline(&line_buf, &line_size, fp) != -1) {
