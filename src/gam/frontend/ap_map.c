@@ -227,6 +227,30 @@ ap_map_draw_airport_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
     }
 }
 
+static void
+ap_map_draw_pave_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
+    const airport_info_t *ap_info = &ap->db->airports[ap_index];
+    const size_t          pave_bounds_size = vector_size(ap_info->pave_bounds);
+
+    for (size_t i = 0; i < pave_bounds_size; ++i) {
+        airport_bounds_t pave_sect;
+        vector_get(ap_info->pave_bounds, i, &pave_sect);
+        const size_t pave_sect_size = vector_size(pave_sect.latitude);
+
+        for (size_t j = 0; j < pave_sect_size; ++j) {
+            double lat, lon;
+            vector_get(pave_sect.latitude, j, &lat);
+            vector_get(pave_sect.longitude, j, &lon);
+
+            vec2d_t p = ap_map_latlon_project(ap, lat2d_t_create(lat, lon));
+
+            cairo_set_source_rgb(cr, 1, 0, 0);
+            cairo_rectangle(cr, p.x, p.y, 2, 2);
+            cairo_fill(cr);
+        }
+    }
+}
+
 void
 ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
     ap_map_set_draw_dims(ap, ap_index);
@@ -234,7 +258,9 @@ ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
     cairo_save(cr);
     cairo_translate(cr, GAM_WINDOW_WIDTH / 4.0, GAM_WINDOW_HEIGHT / 4.0);
     ap_map_draw_airport_bounds(cr, ap, ap_index);
+    ap_map_draw_pave_bounds(cr, ap, ap_index);
     ap_map_draw_runways(cr, ap, ap_index);
+
     cairo_restore(cr);
 }
 

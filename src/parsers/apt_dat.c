@@ -171,11 +171,29 @@ apt_dat_handle_130(const char *line, airport_info_t *ap_info) {
 
 static void
 apt_dat_handle_110(const char *line, airport_info_t *ap_info, bool new_node) {
+    airport_bounds_t *ap_bnds;
+    size_t            pave_b_index;
+
+    double            lat_val = apt_dat_str_to_double(line, 1);
+    double            lon_val = apt_dat_str_to_double(line, 2);
+
     if (new_node) {
-        UNUSED(ap_info);
+        airport_bounds_t bounds;
+
+        bounds.latitude = vector_create(sizeof(double), 2);
+        bounds.longitude = vector_create(sizeof(double), 2);
+
+        vector_push(ap_info->pave_bounds, &bounds);
     }
 
-    UNUSED(line);
+    pave_b_index = vector_size(ap_info->pave_bounds);
+    ASSERT(pave_b_index > 0);
+    pave_b_index -= 1;
+
+    vector_get_ref(ap_info->pave_bounds, pave_b_index, (void *)&ap_bnds);
+
+    vector_push(ap_bnds->latitude, &lat_val);
+    vector_push(ap_bnds->longitude, &lon_val);
 }
 
 static int
@@ -365,6 +383,16 @@ apt_dat_db_free(airport_db_t *db) {
         free(db->airports[i].runways);
         db->airports[i].boundaries.latitude = vector_destroy(db->airports[i].boundaries.latitude);
         db->airports[i].boundaries.longitude = vector_destroy(db->airports[i].boundaries.longitude);
+
+        const size_t pave_bnds_size = vector_size(db->airports[i].pave_bounds);
+
+        for (size_t j = 0; j < pave_bnds_size; ++j) {
+            airport_bounds_t *coords_ref;
+            vector_get_ref(db->airports[i].pave_bounds, j, (void *)&coords_ref);
+            vector_destroy(coords_ref->latitude);
+            vector_destroy(coords_ref->longitude);
+        }
+
         db->airports[i].pave_bounds = vector_destroy(db->airports[i].pave_bounds);
     }
 
