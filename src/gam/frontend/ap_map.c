@@ -57,23 +57,29 @@ ap_map_bounds_latlon(ap_map_t *ap, size_t ap_index) {
     ap->map_bounds.lat2 = 1000;
     ap->map_bounds.lon2 = 1000;
 
-    for (size_t i = 0; i < ap->db->airports[ap_index].boundaries.size; ++i) {
+    for (size_t i = 0; i < vector_size(ap->db->airports[ap_index].boundaries.latitude); ++i) {
         const airport_bounds_t *bnds = &ap->db->airports[ap_index].boundaries;
 
-        if (bnds->latitude[i] > ap->map_bounds.lat1) {
-            ap->map_bounds.lat1 = bnds->latitude[i];
+        double                  cur_lat_v;
+        double                  cur_lon_v;
+
+        vector_get(bnds->latitude, i, &cur_lat_v);
+        vector_get(bnds->longitude, i, &cur_lon_v);
+
+        if (cur_lat_v > ap->map_bounds.lat1) {
+            ap->map_bounds.lat1 = cur_lat_v;
         }
 
-        if (bnds->longitude[i] > ap->map_bounds.lon1) {
-            ap->map_bounds.lon1 = bnds->longitude[i];
+        if (cur_lon_v > ap->map_bounds.lon1) {
+            ap->map_bounds.lon1 = cur_lon_v;
         }
 
-        if (bnds->latitude[i] < ap->map_bounds.lat2) {
-            ap->map_bounds.lat2 = bnds->latitude[i];
+        if (cur_lat_v < ap->map_bounds.lat2) {
+            ap->map_bounds.lat2 = cur_lat_v;
         }
 
-        if (bnds->longitude[i] < ap->map_bounds.lon2) {
-            ap->map_bounds.lon2 = bnds->longitude[i];
+        if (cur_lon_v < ap->map_bounds.lon2) {
+            ap->map_bounds.lon2 = cur_lon_v;
         }
     }
 }

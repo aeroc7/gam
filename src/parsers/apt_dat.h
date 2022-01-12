@@ -10,6 +10,7 @@
 #define APT_DAT_H_
 
 #include <stdlib.h>
+#include <utils/vec.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,10 +24,8 @@ typedef struct runway_info {
 } runway_info_t;
 
 typedef struct airport_bounds {
-    double *latitude;
-    double *longitude;
-    size_t  size;
-    size_t  allocd;
+    vector_t *latitude;
+    vector_t *longitude;
 } airport_bounds_t;
 
 typedef struct airport_info {
@@ -42,6 +41,7 @@ typedef struct airport_info {
     size_t           runways_size;
 
     airport_bounds_t boundaries;
+    vector_t        *pave_bounds;
 } airport_info_t;
 
 typedef struct airport_db {
