@@ -79,6 +79,14 @@ vector_push(vector_t *vec, void *elem) {
 }
 
 void
+vector_get_ref(const vector_t *vec, size_t index, void **data_out) {
+    ASSERT(vec != NULL);
+    ASSERT(index < vec->size);
+    void *index_pos = (uint8_t *)vec->data + (index * vec->data_size);
+    *data_out = index_pos;
+}
+
+void
 vector_get(const vector_t *vec, size_t index, void *data_out) {
     ASSERT(vec != NULL);
     ASSERT(index < vec->size);
