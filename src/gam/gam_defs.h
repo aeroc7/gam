@@ -23,6 +23,7 @@ extern "C" {
 #define GAM_UI_GLOBAL_BORDER            15 /* Pixels */
 
 #define GAM_UI_APT_RUNWAY_COLOR         0x0973D6
+#define GAM_UI_APT_BOUNDS_COLOR         0x475159
 
 #define GAM_UI_APT_RUNWAY_WIDTH_DEFAULT 2.0 /* Pixels */
 

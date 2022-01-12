@@ -34,6 +34,14 @@ struct ap_map {
     airport_db_t  *db;
 };
 
+static lat2d_t
+lat2d_t_create(double lat, double lon) {
+    lat2d_t p;
+    p.lat = lat;
+    p.lon = lon;
+    return p;
+}
+
 static double
 haversine_formula_meters(double lat1, double lon1, double lat2, double lon2) {
     double dlat = DEG_TO_RAD(lat2 - lat1);
@@ -142,10 +150,10 @@ ap_map_pixels_per_meter(const ap_map_t *ap, size_t ap_index) {
     const airport_info_t *ap_db = &ap->db->airports[ap_index];
     ASSERT(ap_db->runways_size > 0);
 
-    const lat2d_t p1 = {
-        .lat = ap_db->runways[0].latitude[0], .lon = ap_db->runways[0].longitude[0]};
-    const lat2d_t p2 = {
-        .lat = ap_db->runways[0].latitude[1], .lon = ap_db->runways[0].longitude[1]};
+    const lat2d_t p1 =
+        lat2d_t_create(ap_db->runways[0].latitude[0], ap_db->runways[0].longitude[0]);
+    const lat2d_t p2 =
+        lat2d_t_create(ap_db->runways[0].latitude[1], ap_db->runways[0].longitude[1]);
 
     double  real_dist_meters = haversine_formula_meters(p1.lat, p1.lon, p2.lat, p2.lon);
 
@@ -167,13 +175,14 @@ ap_map_meters_to_pixels(const ap_map_t *ap, size_t ap_index, double meters) {
 
 static void
 ap_map_draw_runways(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
-    for (size_t i = 0; i < ap->db->airports[ap_index].runways_size; ++i) {
+    const airport_info_t *ap_info = &ap->db->airports[ap_index];
+    for (size_t i = 0; i < ap_info->runways_size; ++i) {
         const runway_info_t *rwy = &ap->db->airports[ap_index].runways[i];
         vec2d_t              rwy_coords[2];
         double               rwy_width_px;
 
         for (int j = 0; j < 2; ++j) {
-            lat2d_t p = {.lat = rwy->latitude[j], .lon = rwy->longitude[j]};
+            lat2d_t p = lat2d_t_create(rwy->latitude[j], rwy->longitude[j]);
             rwy_coords[j] = ap_map_latlon_project(ap, p);
         }
 
@@ -191,11 +200,42 @@ ap_map_draw_runways(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
     }
 }
 
+static void
+ap_map_draw_airport_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
+    const airport_info_t *ap_info = &ap->db->airports[ap_index];
+    const size_t          bounds_size = vector_size(ap_info->boundaries.latitude);
+
+    for (size_t i = 1; i < bounds_size; ++i) {
+        vec2d_t points[2];
+        size_t  j_ind;
+        size_t  j;
+
+        for (j = (i - 1), j_ind = 0; j <= i; ++j, ++j_ind) {
+            double lat, lon;
+            vector_get(ap_info->boundaries.latitude, j, &lat);
+            vector_get(ap_info->boundaries.longitude, j, &lon);
+
+            lat2d_t lp = lat2d_t_create(lat, lon);
+            points[j_ind] = ap_map_latlon_project(ap, lp);
+        }
+
+        cairo_set_source_rgb(cr, HEX_TO_RGB_INPLACE(GAM_UI_APT_BOUNDS_COLOR));
+        cairo_set_line_width(cr, 2);
+        cairo_move_to(cr, points[0].x, points[0].y);
+        cairo_line_to(cr, points[1].x, points[1].y);
+        cairo_stroke(cr);
+    }
+}
+
 void
 ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
     ap_map_set_draw_dims(ap, ap_index);
 
+    cairo_save(cr);
+    cairo_translate(cr, GAM_WINDOW_WIDTH / 4.0, GAM_WINDOW_HEIGHT / 4.0);
+    ap_map_draw_airport_bounds(cr, ap, ap_index);
     ap_map_draw_runways(cr, ap, ap_index);
+    cairo_restore(cr);
 }
 
 ap_map_t *
