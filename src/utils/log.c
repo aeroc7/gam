@@ -13,19 +13,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#define LOG_STATS_FMT "%i:%i:%i [%s:%i]: "
 
 static void
-log_out(FILE *loc, char *fmt, va_list ap) {
-    va_list ap2;
-    int     len;
-    char   *buf = NULL;
+log_out(FILE *loc, int line, const char *file, char *fmt, va_list ap) {
+    va_list    ap2;
+    int        msg_len, info_len;
+    char      *buf = NULL;
+    time_t     rtime;
+    struct tm *timeinfo;
 
     va_copy(ap2, ap);
-    len = vsnprintf(buf, 0, fmt, ap) + 1;
-    assert(len > 0);
-    buf = malloc((sizeof(char) * (unsigned)len) + 1);
-    vsnprintf(buf, (size_t)len, fmt, ap2);
-    buf[len] = '\0';
+
+    time(&rtime);
+    timeinfo = localtime(&rtime);
+    info_len = snprintf(
+        NULL, 0, LOG_STATS_FMT, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, file, line);
+    assert(info_len > 0);
+    msg_len = vsnprintf(NULL, 0, fmt, ap);
+    assert(msg_len > 0);
+    buf = malloc((sizeof(char) * (unsigned)(info_len + msg_len)) + 1);
+
+    int wbytes = snprintf(buf, (size_t)info_len + 1, LOG_STATS_FMT, timeinfo->tm_hour,
+        timeinfo->tm_min, timeinfo->tm_sec, file, line);
+    assert(wbytes > 0);
+    char *end_buf = buf + wbytes;
+    vsnprintf(end_buf, (size_t)msg_len + 1, fmt, ap2);
+
     fprintf(loc, "%s\n", buf);
 
     free(buf);
@@ -33,17 +49,17 @@ log_out(FILE *loc, char *fmt, va_list ap) {
 }
 
 void
-log_err(char *fmt, ...) {
+log_err_(int line, const char *file, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    log_out(stderr, fmt, ap);
+    log_out(stderr, line, file, fmt, ap);
     va_end(ap);
 }
 
 void
-log_msg(char *fmt, ...) {
+log_msg_(int line, const char *file, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    log_out(stdout, fmt, ap);
+    log_out(stdout, line, file, fmt, ap);
     va_end(ap);
 }
