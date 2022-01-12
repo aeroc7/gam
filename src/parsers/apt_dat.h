@@ -55,6 +55,8 @@ void *
 apt_dat_db_free(airport_db_t *db);
 size_t
 apt_dat_find_by_icao(const airport_db_t *db, const char *icao);
+void
+apt_dat_airport_verify(const airport_info_t *apt);
 
 #ifdef __cplusplus
 }

@@ -249,6 +249,26 @@ apt_dat_gather_ap_info(const char *line, void *udata) {
     return 1;
 }
 
+void
+apt_dat_airport_verify(const airport_info_t *apt) {
+    ASSERT(apt != NULL);
+    ASSERT(apt->icao != NULL);
+
+    if (apt->city == NULL) {
+        log_err("Airport %s does not contain [city]", apt->icao);
+    } else if (apt->country == NULL) {
+        log_err("Airport %s does not contain [country]", apt->icao);
+    } else if (apt->name == NULL) {
+        log_err("Airport %s does not contain [name]", apt->icao);
+    } else if (apt->state == NULL) {
+        log_err("Airport %s does not contain [state]", apt->icao);
+    } else if (apt->pave_bounds == NULL) {
+        log_err("Airport %s does not contain [pave_bounds]", apt->icao);
+    } else if (apt->runways == NULL) {
+        log_err("Airport %s does not contain [runways]", apt->icao);
+    }
+}
+
 airport_db_t *
 apt_dat_airport_db_create(size_t num_airports) {
     airport_db_t *adb;
