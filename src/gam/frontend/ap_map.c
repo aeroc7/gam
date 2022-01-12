@@ -14,71 +14,27 @@
 #include <utils/constants.h>
 #include <utils/log.h>
 
-struct ap_map {
-    double        max_x;
-    double        max_y;
-    double        min_x;
-    double        min_y;
+typedef struct bounding_box {
+    double lat1;
+    double lon1;
+    double lat2;
+    double lon2;
+} bounding_box_t;
 
-    airport_db_t *db;
+struct ap_map {
+    bounding_box_t map_bounds;
+
+    double         draw_w;
+    double         draw_h;
+
+    double         draw_w_ratio;
+    double         draw_h_ratio;
+
+    airport_db_t  *db;
 };
 
-static vec2d_t
-equirectangular_proj(double lat, double lon, double lat_ref) {
-    ASSERT(!isnan(lat));
-    ASSERT(!isnan(lon));
-    ASSERT(!isnan(lat_ref));
-    vec2d_t coords;
-
-    coords.x = EARTH_RADIUS * lon * cos(DEG_TO_RAD(lat_ref));
-    coords.y = EARTH_RADIUS * lat;
-
-    coords.x = fabs(coords.x);
-    coords.y = fabs(coords.y);
-
-    ASSERT(!isnan(coords.x));
-
-    return coords;
-}
-
-static vec2d_t
-global_to_local_xy(const ap_map_t *ap, vec2d_t rwy) {
-    ASSERT(!isnan(rwy.x));
-    ASSERT(!isnan(rwy.y));
-
-    double difx = rwy.x - ap->min_x;
-    double dify = rwy.y - ap->min_y;
-
-    rwy.x = difx * ((GAM_WINDOW_WIDTH) / (ap->max_x - ap->min_x));
-    rwy.y = dify * ((GAM_WINDOW_HEIGHT) / (ap->max_y - ap->min_y));
-
-    return rwy;
-}
-
-static vec4d_t
-rwy_coords_convert_combine(const ap_map_t *ap, vec2d_t rwy1, vec2d_t rwy2) {
-    ASSERT(!isnan(rwy1.x));
-    ASSERT(!isnan(rwy1.y));
-    ASSERT(!isnan(rwy2.x));
-    ASSERT(!isnan(rwy2.y));
-    vec4d_t ret;
-
-    rwy1.x = fabs(rwy1.x);
-    rwy1.y = fabs(rwy1.y);
-    rwy2.x = fabs(rwy2.x);
-    rwy2.y = fabs(rwy2.y);
-
-    rwy1 = global_to_local_xy(ap, rwy1);
-    rwy2 = global_to_local_xy(ap, rwy2);
-
-    ret.a = rwy1;
-    ret.b = rwy2;
-
-    return ret;
-}
-
 static double
-haversine_formula(double lat1, double lon1, double lat2, double lon2) {
+haversine_formula_meters(double lat1, double lon1, double lat2, double lon2) {
     double dlat = DEG_TO_RAD(lat2 - lat1);
     double dlon = DEG_TO_RAD(lon2 - lon1);
 
@@ -90,20 +46,99 @@ haversine_formula(double lat1, double lon1, double lat2, double lon2) {
     return EARTH_RADIUS * c;
 }
 
+static void
+ap_map_bounds_latlon(ap_map_t *ap, size_t ap_index) {
+    // Temporary
+    ASSERT(ap->db->airports[ap_index].boundaries.latitude != NULL);
+
+    /* Set to values lat/lon could *never* be so we are sure the min/max are accurate */
+    ap->map_bounds.lat1 = -1000;
+    ap->map_bounds.lon1 = -1000;
+    ap->map_bounds.lat2 = 1000;
+    ap->map_bounds.lon2 = 1000;
+
+    for (size_t i = 0; i < ap->db->airports[ap_index].boundaries.size; ++i) {
+        const airport_bounds_t *bnds = &ap->db->airports[ap_index].boundaries;
+
+        if (bnds->latitude[i] > ap->map_bounds.lat1) {
+            ap->map_bounds.lat1 = bnds->latitude[i];
+        }
+
+        if (bnds->longitude[i] > ap->map_bounds.lon1) {
+            ap->map_bounds.lon1 = bnds->longitude[i];
+        }
+
+        if (bnds->latitude[i] < ap->map_bounds.lat2) {
+            ap->map_bounds.lat2 = bnds->latitude[i];
+        }
+
+        if (bnds->longitude[i] < ap->map_bounds.lon2) {
+            ap->map_bounds.lon2 = bnds->longitude[i];
+        }
+    }
+}
+
+static void
+ap_map_set_draw_dims(ap_map_t *ap, size_t ap_index) {
+    ap_map_bounds_latlon(ap, ap_index);
+
+    double bb_avg_lat = (ap->map_bounds.lat1 + ap->map_bounds.lat2) / 2.0;
+    double bb_avg_lon = (ap->map_bounds.lon1 + ap->map_bounds.lon2) / 2.0;
+
+    /* Bounding box distance around the airport */
+    /* bb_width_m x bb_height_m */
+    double bb_width_m =
+        haversine_formula_meters(bb_avg_lat, ap->map_bounds.lon1, bb_avg_lat, ap->map_bounds.lon2);
+    double bb_height_m =
+        haversine_formula_meters(ap->map_bounds.lat1, bb_avg_lon, ap->map_bounds.lat2, bb_avg_lon);
+
+    /* Map real distance to pixel values */
+    double w_h_ratio = bb_width_m / bb_height_m;
+    ap->draw_w = (int)(w_h_ratio * GAM_WINDOW_HEIGHT);
+    ap->draw_h = GAM_WINDOW_HEIGHT;
+
+    ap->draw_w_ratio = ap->draw_w / bb_width_m;
+    ap->draw_h_ratio = ap->draw_h / bb_height_m;
+}
+
 static double
-pixels_per_meter(const ap_map_t *ap, lat2d_t p1, lat2d_t p2, double lat_ref) {
-    double  real_distance_meters = haversine_formula(p1.lat, p1.lon, p2.lat, p2.lon) * 1000.0;
-    vec2d_t global_coords1 = equirectangular_proj(p1.lat, p1.lon, lat_ref);
-    vec2d_t global_coords2 = equirectangular_proj(p2.lat, p2.lon, lat_ref);
+ap_map_distance_to_x(ap_map_t *ap, double distance) {
+    ASSERT(ap != NULL);
+    return ap->draw_w_ratio * distance;
+}
 
-    vec4d_t rwy_local_p = rwy_coords_convert_combine(ap, global_coords1, global_coords2);
+static double
+ap_map_distance_to_y(ap_map_t *ap, double distance) {
+    ASSERT(ap != NULL);
+    return ap->draw_h_ratio * distance;
+}
 
-    /* Distance formula */
-    double rwy_loc_delta_x2 = pow(rwy_local_p.b.x - rwy_local_p.a.x, 2);
-    double rwy_loc_delta_y2 = pow(rwy_local_p.b.y - rwy_local_p.a.y, 2);
-    double xy_distance = sqrt(rwy_loc_delta_x2 + rwy_loc_delta_y2);
+void
+ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
+    ap_map_set_draw_dims(ap, ap_index);
 
-    return (xy_distance / real_distance_meters);
+    for (size_t i = 0; i < ap->db->airports[ap_index].runways_size; ++i) {
+        const runway_info_t *rwy = &ap->db->airports[ap_index].runways[i];
+        double               d_to_min_lat[2];
+        double               d_to_min_lon[2];
+
+        for (int j = 0; j < 2; ++j) {
+            double avg_lat = (ap->map_bounds.lat1 + rwy->latitude[j]) / 2.0;
+            double avg_lon = (ap->map_bounds.lon1 + rwy->longitude[j]) / 2.0;
+
+            d_to_min_lat[j] =
+                haversine_formula_meters(rwy->latitude[j], avg_lon, ap->map_bounds.lat1, avg_lon);
+            d_to_min_lon[j] =
+                haversine_formula_meters(avg_lat, rwy->longitude[j], avg_lat, ap->map_bounds.lon1);
+        }
+
+        cairo_set_source_rgb(cr, 0, 0.25, 0.75);
+        cairo_move_to(cr, ap_map_distance_to_x(ap, d_to_min_lat[0]),
+            ap_map_distance_to_y(ap, d_to_min_lon[0]));
+        cairo_line_to(cr, ap_map_distance_to_x(ap, d_to_min_lat[1]),
+            ap_map_distance_to_y(ap, d_to_min_lon[1]));
+        cairo_stroke(cr);
+    }
 }
 
 ap_map_t *
@@ -114,56 +149,12 @@ ap_map_create(airport_db_t *db) {
     ap_mp = malloc(sizeof(*ap_mp));
     ap_mp->db = db;
 
-    ap_mp->max_x = 0.0;
-    ap_mp->max_y = 0.0;
-    ap_mp->min_x = DBL_MAX;
-    ap_mp->min_y = DBL_MAX;
+    ap_mp->draw_w = 0.0;
+    ap_mp->draw_h = 0.0;
+    ap_mp->draw_w_ratio = 0.0;
+    ap_mp->draw_h_ratio = 0.0;
 
     return ap_mp;
-}
-
-void
-ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
-    vec2d_t rw[2];
-
-    for (size_t i = 0; i < ap->db->airports[ap_index].runways_size; ++i) {
-        const runway_info_t *rwy = &ap->db->airports[ap_index].runways[i];
-
-        for (int j = 0; j < 2; ++j) {
-            rw[j] = equirectangular_proj(
-                rwy->latitude[j], rwy->longitude[j], ap->db->airports[ap_index].latitude);
-
-            if (rw[j].x > ap->max_x) {
-                ap->max_x = rw[j].x;
-            }
-
-            if (rw[j].y > ap->max_y) {
-                ap->max_y = rw[j].y;
-            }
-
-            if (rw[j].x < ap->min_x) {
-                ap->min_x = rw[j].x;
-            }
-
-            if (rw[j].y < ap->min_y) {
-                ap->min_y = rw[j].y;
-            }
-        }
-
-        lat2d_t p1 = {.lat = rwy->latitude[0], .lon = rwy->longitude[0]};
-        lat2d_t p2 = {.lat = rwy->latitude[1], .lon = rwy->longitude[1]};
-        double  pixels_p_meter = pixels_per_meter(ap, p1, p2, ap->db->airports[ap_index].latitude);
-
-        /* Translate to x, y screen coordinates */
-        vec4d_t subd = rwy_coords_convert_combine(ap, rw[0], rw[1]);
-
-        /* Draw airport lines */
-        cairo_set_source_rgb(cr, 0, 0.25, 0.75);
-        cairo_set_line_width(cr, pixels_p_meter * rwy->width);
-        cairo_move_to(cr, subd.a.x, subd.a.y);
-        cairo_line_to(cr, subd.b.x, subd.b.y);
-        cairo_stroke(cr);
-    }
 }
 
 void *
