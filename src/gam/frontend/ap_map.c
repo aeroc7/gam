@@ -207,8 +207,7 @@ ap_map_draw_airport_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
 
     for (size_t i = 1; i < bounds_size; ++i) {
         vec2d_t points[2];
-        size_t  j_ind;
-        size_t  j;
+        size_t  j, j_ind;
 
         for (j = (i - 1), j_ind = 0; j <= i; ++j, ++j_ind) {
             double lat, lon;
@@ -237,17 +236,29 @@ ap_map_draw_pave_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
         vector_get(ap_info->pave_bounds, i, &pave_sect);
         const size_t pave_sect_size = vector_size(pave_sect.latitude);
 
+        cairo_set_source_rgb(cr, HEX_TO_RGB_INPLACE(GAM_UI_APT_PAVE_BOUNDS_COLOR));
+        cairo_new_sub_path(cr);
+
         for (size_t j = 0; j < pave_sect_size; ++j) {
-            double lat, lon;
+            vec2d_t point;
+            double  lat, lon;
+
             vector_get(pave_sect.latitude, j, &lat);
             vector_get(pave_sect.longitude, j, &lon);
 
-            vec2d_t p = ap_map_latlon_project(ap, lat2d_t_create(lat, lon));
+            lat2d_t lp = lat2d_t_create(lat, lon);
+            point = ap_map_latlon_project(ap, lp);
 
-            cairo_set_source_rgb(cr, 1, 0, 0);
-            cairo_rectangle(cr, p.x, p.y, 2, 2);
-            cairo_fill(cr);
+            if (j == 0) {
+                /* Starting position */
+                cairo_move_to(cr, point.x, point.y);
+            }
+
+            cairo_line_to(cr, point.x, point.y);
         }
+
+        cairo_close_path(cr);
+        cairo_fill(cr);
     }
 }
 
