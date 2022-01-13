@@ -100,8 +100,6 @@ utils_str_split_after(const char *data, unsigned index) {
 long
 utils_gettime() {
     struct timespec tp;
-
-    clock_gettime(CLOCK_MONOTONIC, &tp);
-
-    return tp.tv_nsec;
+    VRET0(clock_gettime(CLOCK_MONOTONIC, &tp));
+    return ((long)tp.tv_sec * 1000000000L) + tp.tv_nsec;
 }
