@@ -23,6 +23,7 @@ struct cairo_mt {
     int              width;
     int              height;
     unsigned         gl_tex_id;
+    unsigned         fps_tgt;
 
     cairo_surface_t *surface;
     cairo_t         *cr;
@@ -58,7 +59,7 @@ cairo_mt_gen_gl_texture(int width, int height) {
 }
 
 cairo_mt_t *
-cairo_mt_create(int width, int height) {
+cairo_mt_create(int width, int height, unsigned fps_tgt) {
     cairo_mt_t *cmt;
 
     cmt = malloc(sizeof(*cmt));
@@ -69,6 +70,7 @@ cairo_mt_create(int width, int height) {
     cmt->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cmt->cr = cairo_create(cmt->surface);
     cmt->pbo = gl_pbo_create(width, height);
+    cmt->fps_tgt = fps_tgt;
 
     pthread_mutex_init(&cmt->mutex, NULL);
 
@@ -77,6 +79,26 @@ cairo_mt_create(int width, int height) {
     cmt->quit_thread = false;
 
     return cmt;
+}
+
+static void
+cairo_mt_calc_sleep(cairo_mt_t *cmt, long time_start, long time_end) {
+    UNUSED(cmt);
+    ASSERT(time_end > time_start);
+    double ms_sleep_time;
+    long   diff_time_micros;
+
+    diff_time_micros = (time_end - time_start) / 1000;
+    ms_sleep_time = (1000.0 / cmt->fps_tgt) * 1000.0;
+
+    if (diff_time_micros >= ms_sleep_time || diff_time_micros < 0) {
+        diff_time_micros = 0;
+    }
+
+    usleep((unsigned)(ms_sleep_time - diff_time_micros));
+
+    // long time_after_sleep = utils_gettime() - time_start;
+    // log_msg("FPS: %lf", 1000000000.0 / (double)time_after_sleep);
 }
 
 static void *
@@ -111,11 +133,7 @@ cairo_mt_thread(void *arg) {
         }
 
         long time_end = utils_gettime();
-        long time_micros = (time_end - time_start) / 1000;
-        if (time_micros >= 33000l) {
-            time_micros = 0;
-        }
-        usleep((unsigned)(33000l - time_micros));
+        cairo_mt_calc_sleep(cmt, time_start, time_end);
     }
 
     cmt->end(cmt->cr, cmt->userdata);

@@ -18,7 +18,7 @@ extern "C" {
 typedef struct cairo_mt cairo_mt_t;
 
 cairo_mt_t *
-cairo_mt_create(int width, int height);
+cairo_mt_create(int width, int height, unsigned fps_tgt);
 void
 cairo_mt_set_callbacks(cairo_mt_t *cmt, void (*start)(cairo_t *cr, void *),
     void (*loop)(cairo_t *cr, void *), void (*end)(cairo_t *cr, void *));
