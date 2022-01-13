@@ -45,8 +45,12 @@ window_loop_cb(window_inst_t *window, void *udata) {
 
 static void
 window_mouse_position_callback(double xpos, double ypos, void *udata) {
-    UNUSED(udata);
-    log_msg("%lf %lf", xpos, ypos);
+    ASSERT(udata != NULL);
+    mt_udata_t *mtdata = (mt_udata_t *)udata;
+    pthread_mutex_lock(&mtdata->mutex);
+    mtdata->mt.mouse_x = xpos;
+    mtdata->mt.mouse_y = ypos;
+    pthread_mutex_unlock(&mtdata->mutex);
 }
 
 static void
@@ -88,7 +92,11 @@ frontend_init(airport_db_t *db) {
 
     mtdata = malloc(sizeof(*mtdata));
     pthread_mutex_init(&mtdata->mutex, NULL);
+
     mtdata->db = db;
+    mtdata->mt.mouse_click = false;
+    mtdata->mt.mouse_x = 0.0;
+    mtdata->mt.mouse_y = 0.0;
 
     winst = window_create(GAM_WINDOW_TITLE, GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT);
     window_set_mouse_pos_callback(winst, window_mouse_position_callback, mtdata);
@@ -99,7 +107,7 @@ frontend_init(airport_db_t *db) {
     }
 
     /* Init MT cairo rendering */
-    cmt = cairo_mt_create(GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT);
+    cmt = cairo_mt_create(GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT, GAM_WINDOW_RENDER_FPS_TGT);
     cairo_mt_set_callbacks(cmt, mt_start, mt_loop, mt_end);
     cairo_mt_start(cmt, mtdata);
 
