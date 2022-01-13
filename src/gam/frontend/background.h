@@ -16,7 +16,9 @@ extern "C" {
 #endif
 
 void
-background_draw(cairo_t *cr);
+background_draw_enter(cairo_t *cr);
+void
+background_draw_exit(cairo_t *cr);
 
 #ifdef __cplusplus
 }

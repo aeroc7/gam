@@ -42,6 +42,14 @@ lat2d_t_create(double lat, double lon) {
     return p;
 }
 
+static vec2d_t
+vec2d_t_create(double x, double y) {
+    vec2d_t p;
+    p.x = x;
+    p.y = y;
+    return p;
+}
+
 static double
 haversine_formula_meters(double lat1, double lon1, double lat2, double lon2) {
     double dlat = DEG_TO_RAD(lat2 - lat1);
@@ -107,13 +115,24 @@ ap_map_set_draw_dims(ap_map_t *ap, size_t ap_index) {
     double bb_height_m =
         haversine_formula_meters(ap->map_bounds.lat1, bb_avg_lon, ap->map_bounds.lat2, bb_avg_lon);
 
-    /* Map real distance to pixel values */
-    double w_h_ratio = bb_width_m / bb_height_m;
-    ap->draw_w = (int)(w_h_ratio * GAM_WINDOW_HEIGHT);
-    ap->draw_h = GAM_WINDOW_HEIGHT;
+    // Swap width & height
+    double width = bb_height_m;
+    double height = bb_width_m;
+    double nratio;
 
-    ap->draw_w_ratio = ap->draw_w / bb_width_m;
-    ap->draw_h_ratio = ap->draw_h / bb_height_m;
+    if (width >= height) {
+        nratio = GAM_UI_APT_DRAW_SIZE_W / width;
+    } else {
+        nratio = GAM_UI_APT_DRAW_SIZE_H / height;
+    }
+
+    width *= nratio;
+    height *= nratio;
+
+    ap->draw_w = width;
+    ap->draw_h = height;
+    ap->draw_w_ratio = ap->draw_w / bb_height_m;
+    ap->draw_h_ratio = ap->draw_h / bb_width_m;
 }
 
 static double
@@ -262,13 +281,33 @@ ap_map_draw_pave_bounds(cairo_t *cr, const ap_map_t *ap, size_t ap_index) {
     }
 }
 
+static vec2d_t
+ap_map_get_centered_xy(ap_map_t *ap) {
+    double x_addition, y_addition;
+
+    x_addition = (GAM_WINDOW_WIDTH / 2.0);
+    y_addition = (GAM_WINDOW_HEIGHT / 2.0);
+
+    x_addition -= ap->draw_w / 2.0;
+    y_addition -= ap->draw_h / 2.0;
+
+    return vec2d_t_create(x_addition, y_addition);
+}
+
 void
 ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
     ap_map_set_draw_dims(ap, ap_index);
 
+    cairo_save(cr);
+
+    vec2d_t map_centrd = ap_map_get_centered_xy(ap);
+    cairo_translate(cr, map_centrd.x, map_centrd.y);
+
     ap_map_draw_airport_bounds(cr, ap, ap_index);
     ap_map_draw_pave_bounds(cr, ap, ap_index);
     ap_map_draw_runways(cr, ap, ap_index);
+
+    cairo_restore(cr);
 }
 
 ap_map_t *

@@ -12,19 +12,23 @@
 #include <utils/cairo/round_rect.h>
 #include <utils/hex_to_rgb.h>
 
-#define CONTENT_PANEL_W (GAM_WINDOW_WIDTH - (GAM_UI_GLOBAL_BORDER * 2))
-#define CONTENT_PANEL_H (GAM_WINDOW_HEIGHT - (GAM_UI_GLOBAL_BORDER * 4))
-#define CONTENT_PANEL_R 10
-
 void
-background_draw(cairo_t *cr) {
+background_draw_enter(cairo_t *cr) {
     /* Background */
     cairo_set_source_rgb(cr, HEX_TO_RGB_INPLACE(GAM_UI_BG_COLOR));
     rounded_rectangle(cr, 0, 0, GAM_WINDOW_WIDTH, GAM_WINDOW_HEIGHT, GAM_UI_GLOBAL_BORDER);
     cairo_fill(cr);
 
+    /* Start clip region */
     cairo_set_source_rgb(cr, HEX_TO_RGB_INPLACE(GAM_UI_PANEL_COLOR));
-    rounded_rectangle(cr, GAM_UI_GLOBAL_BORDER, GAM_UI_GLOBAL_BORDER * 3, CONTENT_PANEL_W,
-        CONTENT_PANEL_H, CONTENT_PANEL_R);
-    cairo_fill(cr);
+    rounded_rectangle(cr, GAM_UI_GLOBAL_BORDER, GAM_UI_GLOBAL_BORDER * 3,
+        GAM_UI_APT_CONTENT_PANEL_W, GAM_UI_APT_CONTENT_PANEL_H, GAM_UI_APT_CONTENT_PANEL_R);
+    cairo_clip(cr);
+    cairo_paint(cr);
+}
+
+void
+background_draw_exit(cairo_t *cr) {
+    /* End clip region */
+    cairo_reset_clip(cr);
 }

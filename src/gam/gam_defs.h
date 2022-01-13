@@ -29,6 +29,12 @@ extern "C" {
 
 #define GAM_UI_APT_RUNWAY_WIDTH_DEFAULT 2.0 /* Pixels */
 
+#define GAM_UI_APT_DRAW_SIZE_W          (GAM_WINDOW_WIDTH / 2.0)
+#define GAM_UI_APT_DRAW_SIZE_H          (GAM_WINDOW_WIDTH / 2.0)
+#define GAM_UI_APT_CONTENT_PANEL_W      (GAM_WINDOW_WIDTH - (GAM_UI_GLOBAL_BORDER * 2))
+#define GAM_UI_APT_CONTENT_PANEL_H      (GAM_WINDOW_HEIGHT - (GAM_UI_GLOBAL_BORDER * 4))
+#define GAM_UI_APT_CONTENT_PANEL_R      10
+
 #ifdef __cplusplus
 }
 #endif

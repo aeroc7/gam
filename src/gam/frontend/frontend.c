@@ -64,14 +64,15 @@ mt_start(cairo_t *cr, void *udata) {
 static void
 mt_loop(cairo_t *cr, void *udata) {
     ASSERT(udata != NULL);
-    mt_udata_t *mtdata = (mt_udata_t *)udata;
-    background_draw(cr);
+    mt_udata_t   *mtdata = (mt_udata_t *)udata;
 
     airport_db_t *db = mtdata->db;
     ASSERT(db->airports_size > 0);
+    size_t ap_index = apt_dat_find_by_icao(db, "KLAX");
 
-    size_t ap_index = apt_dat_find_by_icao(db, "KSEA");
+    background_draw_enter(cr);
     ap_map_draw(cr, mtdata->ap_map, ap_index);
+    background_draw_exit(cr);
 }
 
 static void
