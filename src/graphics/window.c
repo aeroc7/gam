@@ -16,14 +16,19 @@
 
 static bool global_init_called = false;
 
+typedef struct window_cb_info {
+    bool  flag;
+    void *udata;
+} window_cb_info_t;
+
 struct window_inst {
     GLFWwindow *glfw_window;
-    void (*mouse_pos_cb)(double xpos, double ypos);
-    void (*mouse_button_cb)(bool mouse_down, bool mouse_hold);
-    void (*window_loop_cb)(window_inst_t *window);
-    bool set_mouse_pos_cb;
-    bool set_mouse_button_cb;
-    bool set_window_loop_cb;
+    void (*mouse_pos_cb)(double xpos, double ypos, void *udata);
+    void (*mouse_button_cb)(bool mouse_down, bool mouse_hold, void *udata);
+    void (*window_loop_cb)(window_inst_t *window, void *udata);
+    window_cb_info_t set_mouse_pos_cb;
+    window_cb_info_t set_mouse_button_cb;
+    window_cb_info_t set_window_loop_cb;
 };
 
 static void
@@ -39,7 +44,7 @@ window_mouse_pos_callback(GLFWwindow *window, double xpos, double ypos) {
     window_inst_t *us = (window_inst_t *)glfwGetWindowUserPointer(window);
     ASSERT(us != NULL);
 
-    if (!us->set_mouse_pos_cb) {
+    if (!us->set_mouse_pos_cb.flag) {
         return;
     }
 
@@ -47,14 +52,16 @@ window_mouse_pos_callback(GLFWwindow *window, double xpos, double ypos) {
         return;
     }
 
-    us->mouse_pos_cb(xpos, ypos);
+    us->mouse_pos_cb(xpos, ypos, us->set_mouse_pos_cb.udata);
 }
 
 void
-window_set_mouse_pos_callback(window_inst_t *wind, void (*cb)(double xpos, double ypos)) {
+window_set_mouse_pos_callback(
+    window_inst_t *wind, void (*cb)(double xpos, double ypos, void *ud), void *udata) {
     ASSERT(wind != NULL);
     wind->mouse_pos_cb = cb;
-    wind->set_mouse_pos_cb = true;
+    wind->set_mouse_pos_cb.flag = true;
+    wind->set_mouse_pos_cb.udata = udata;
 }
 
 static void
@@ -65,23 +72,24 @@ window_mouse_button_callback(GLFWwindow *window, int button, int action, int mod
     window_inst_t *us = (window_inst_t *)glfwGetWindowUserPointer(window);
     ASSERT(us != NULL);
 
-    if (!us->set_mouse_button_cb) {
+    if (!us->set_mouse_button_cb.flag) {
         return;
     }
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        us->mouse_button_cb(true, true);
+        us->mouse_button_cb(true, true, us->set_mouse_button_cb.udata);
     } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        us->mouse_button_cb(false, false);
+        us->mouse_button_cb(false, false, us->set_mouse_button_cb.udata);
     }
 }
 
 void
 window_set_mouse_button_callback(
-    window_inst_t *wind, void (*cb)(bool mouse_down, bool mouse_hold)) {
+    window_inst_t *wind, void (*cb)(bool mouse_down, bool mouse_hold, void *ud), void *udata) {
     ASSERT(wind != NULL);
     wind->mouse_button_cb = cb;
-    wind->set_mouse_button_cb = true;
+    wind->set_mouse_button_cb.flag = true;
+    wind->set_mouse_button_cb.udata = udata;
 }
 
 void
@@ -108,8 +116,8 @@ window_loop(window_inst_t *window) {
         glOrtho(0, win_width, win_height, 0, -1, 1);
         glMatrixMode(GL_MODELVIEW);
 
-        if (window->set_window_loop_cb) {
-            window->window_loop_cb(window);
+        if (window->set_window_loop_cb.flag) {
+            window->window_loop_cb(window, window->set_window_loop_cb.udata);
         }
 
         glfwSwapBuffers(window->glfw_window);
@@ -118,10 +126,12 @@ window_loop(window_inst_t *window) {
 }
 
 void
-window_set_window_loop_callback(window_inst_t *window, void (*cb)(window_inst_t *window)) {
+window_set_window_loop_callback(
+    window_inst_t *window, void (*cb)(window_inst_t *window, void *ud), void *udata) {
     ASSERT(window != NULL);
     window->window_loop_cb = cb;
-    window->set_window_loop_cb = true;
+    window->set_window_loop_cb.flag = true;
+    window->set_window_loop_cb.udata = udata;
 }
 
 window_inst_t *
@@ -139,9 +149,9 @@ window_create(const char *title, int w, int h) {
         log_err("Failed to create glfw window");
         exit(EXIT_FAILURE);
     }
-    wind->set_mouse_pos_cb = false;
-    wind->set_mouse_button_cb = false;
-    wind->set_window_loop_cb = false;
+    wind->set_mouse_pos_cb.flag = false;
+    wind->set_mouse_button_cb.flag = false;
+    wind->set_window_loop_cb.flag = false;
 
     glfwSetCursorPosCallback(wind->glfw_window, window_mouse_pos_callback);
     glfwSetMouseButtonCallback(wind->glfw_window, window_mouse_button_callback);

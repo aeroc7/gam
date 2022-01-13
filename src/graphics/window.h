@@ -22,13 +22,16 @@ window_graphics_global_init();
 window_inst_t *
 window_create(const char *title, int w, int h);
 void
-window_set_mouse_pos_callback(window_inst_t *wind, void (*cb)(double xpos, double ypos));
+window_set_mouse_pos_callback(
+    window_inst_t *wind, void (*cb)(double xpos, double ypos, void *ud), void *udata);
 void
-window_set_mouse_button_callback(window_inst_t *wind, void (*cb)(bool mouse_down, bool mouse_hold));
+window_set_mouse_button_callback(
+    window_inst_t *wind, void (*cb)(bool mouse_down, bool mouse_hold, void *ud), void *udata);
 void
 window_loop(window_inst_t *window);
 void
-window_set_window_loop_callback(window_inst_t *window, void (*cb)(window_inst_t *window));
+window_set_window_loop_callback(
+    window_inst_t *window, void (*cb)(window_inst_t *window, void *ud), void *udata);
 void *
 window_destroy(window_inst_t *window);
 void
