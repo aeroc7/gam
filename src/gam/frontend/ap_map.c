@@ -266,13 +266,9 @@ void
 ap_map_draw(cairo_t *cr, ap_map_t *ap, size_t ap_index) {
     ap_map_set_draw_dims(ap, ap_index);
 
-    cairo_save(cr);
-    cairo_translate(cr, GAM_WINDOW_WIDTH / 4.0, GAM_WINDOW_HEIGHT / 4.0);
     ap_map_draw_airport_bounds(cr, ap, ap_index);
     ap_map_draw_pave_bounds(cr, ap, ap_index);
     ap_map_draw_runways(cr, ap, ap_index);
-
-    cairo_restore(cr);
 }
 
 ap_map_t *
