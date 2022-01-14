@@ -294,19 +294,10 @@ apt_dat_airport_db_create(size_t num_airports) {
     ASSERT(num_airports > 0);
 
     adb = malloc(sizeof(*adb));
-    adb->airports = malloc(sizeof(airport_info_t) * num_airports);
+    adb->airports = calloc(num_airports, sizeof(airport_info_t));
     adb->airports_size = 0;
 
     for (size_t i = 0; i < num_airports; ++i) {
-        adb->airports[i].icao = NULL;
-        adb->airports[i].name = NULL;
-        adb->airports[i].city = NULL;
-        adb->airports[i].country = NULL;
-        adb->airports[i].state = NULL;
-        adb->airports[i].latitude = 0;
-        adb->airports[i].longitude = 0;
-        adb->airports[i].runways = NULL;
-        adb->airports[i].runways_size = 0;
         adb->airports[i].boundaries.latitude = vector_create(sizeof(double), 2);
         adb->airports[i].boundaries.longitude = vector_create(sizeof(double), 2);
         adb->airports[i].pave_bounds = vector_create(sizeof(airport_bounds_t), 0);
