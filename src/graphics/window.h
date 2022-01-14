@@ -35,6 +35,9 @@ window_set_window_loop_callback(
 void *
 window_destroy(window_inst_t *window);
 void
+window_set_mouse_scroll_callback(
+    window_inst_t *wind, void (*cb)(int mouse_scroll, void *udata), void *udata);
+void
 window_graphics_global_destroy();
 
 #ifdef __cplusplus

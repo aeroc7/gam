@@ -26,9 +26,11 @@ struct window_inst {
     void (*mouse_pos_cb)(double xpos, double ypos, void *udata);
     void (*mouse_button_cb)(bool mouse_down, bool mouse_hold, void *udata);
     void (*window_loop_cb)(window_inst_t *window, void *udata);
+    void (*mouse_scroll_cb)(int mouse_scroll, void *udata);
     window_cb_info_t set_mouse_pos_cb;
     window_cb_info_t set_mouse_button_cb;
     window_cb_info_t set_window_loop_cb;
+    window_cb_info_t set_mouse_scroll_cb;
 };
 
 static void
@@ -90,6 +92,39 @@ window_set_mouse_button_callback(
     wind->mouse_button_cb = cb;
     wind->set_mouse_button_cb.flag = true;
     wind->set_mouse_button_cb.udata = udata;
+}
+
+static void
+window_mouse_scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+    ASSERT(window != NULL);
+    UNUSED(xoffset);
+    int            scroll;
+
+    window_inst_t *us = (window_inst_t *)glfwGetWindowUserPointer(window);
+    ASSERT(us != NULL);
+
+    if (!us->set_mouse_scroll_cb.flag) {
+        return;
+    }
+
+    if (yoffset > 0) {
+        scroll = 1;
+    } else if (yoffset < 0) {
+        scroll = -1;
+    } else {
+        scroll = 0;
+    }
+
+    us->mouse_scroll_cb(scroll, us->set_mouse_scroll_cb.udata);
+}
+
+void
+window_set_mouse_scroll_callback(
+    window_inst_t *wind, void (*cb)(int mouse_scroll, void *udata), void *udata) {
+    ASSERT(wind != NULL);
+    wind->mouse_scroll_cb = cb;
+    wind->set_mouse_scroll_cb.flag = true;
+    wind->set_mouse_scroll_cb.udata = udata;
 }
 
 void
@@ -155,6 +190,7 @@ window_create(const char *title, int w, int h) {
 
     glfwSetCursorPosCallback(wind->glfw_window, window_mouse_pos_callback);
     glfwSetMouseButtonCallback(wind->glfw_window, window_mouse_button_callback);
+    glfwSetScrollCallback(wind->glfw_window, window_mouse_scroll_callback);
 
     glfwMakeContextCurrent(wind->glfw_window);
     glfwSwapInterval(1);
