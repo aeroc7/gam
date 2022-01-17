@@ -3,4 +3,5 @@ target_sources(project_source INTERFACE
     path_hdlr.c
     utils.c
     vec.c
+    ts_queue.c
 )
