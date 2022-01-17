@@ -187,6 +187,7 @@ window_create(const char *title, int w, int h) {
     wind->set_mouse_pos_cb.flag = false;
     wind->set_mouse_button_cb.flag = false;
     wind->set_window_loop_cb.flag = false;
+    wind->set_mouse_scroll_cb.flag = false;
 
     glfwSetCursorPosCallback(wind->glfw_window, window_mouse_pos_callback);
     glfwSetMouseButtonCallback(wind->glfw_window, window_mouse_button_callback);
