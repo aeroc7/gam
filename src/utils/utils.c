@@ -103,3 +103,10 @@ utils_gettime() {
     VRET0(clock_gettime(CLOCK_MONOTONIC, &tp));
     return ((long)tp.tv_sec * 1000000000L) + tp.tv_nsec;
 }
+
+long
+utils_gettime_seconds() {
+    struct timespec tp;
+    VRET0(clock_gettime(CLOCK_MONOTONIC, &tp));
+    return tp.tv_sec;
+}
