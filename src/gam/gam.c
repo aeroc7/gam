@@ -12,7 +12,7 @@
 #include <parsers/scenery_packs.h>
 #include <utils/log.h>
 
-#include "frontend/frontend.h"
+#include "interface/frontend.h"
 
 int
 gam_init() {
